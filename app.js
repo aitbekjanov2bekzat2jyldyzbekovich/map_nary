@@ -15,14 +15,14 @@ createApp({
     // init
     const initMap = () => {
       const map = new google.maps.Map(document.getElementById("map"), {
-        center: { lat: 41.433678, lng: 75.983283  },
+        center: { lat: 41.433678, lng: 75.983283 },
         zoom: 10,
       });
     };
 
-    window.initMap = initMap;
     onMounted(() => {
       initMap();
+      window.initMap = initMap;
     });
 
     return {
