@@ -12,6 +12,15 @@ createApp({
       { value: "other", name: "Прочее" },
     ];
 
+    // methodsData
+    const windowWidth = ref(window.innerWidth);
+    const statusSidebar = true;
+
+    // methods
+    const updateWidth = () => {
+      windowWidth.value = window.innerWidth;
+      statusSidebar.value = windowWidth <= 768 ? false : true;
+    };
     // init
     const initMap = () => {
       const map = new google.maps.Map(document.getElementById("map"), {
@@ -21,12 +30,15 @@ createApp({
     };
 
     onMounted(() => {
+      window.addEventListener("resize", updateWidth);
       initMap();
       window.initMap = initMap;
     });
 
     return {
       select,
+      windowWidth,
+      statusSidebar,
     };
   },
 }).mount("#app");
