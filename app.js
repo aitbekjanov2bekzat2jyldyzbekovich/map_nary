@@ -12,20 +12,8 @@ createApp({
       { value: "other", name: "Прочее" },
     ];
 
-    // methodsData
-    const windowWidth = ref(window.innerWidth);
-    const statusSidebar = ref(true);
+    // custom
 
-    // methods
-    const updateWidth = () => {
-      windowWidth.value = window.innerWidth;
-      statusSidebar.value = windowWidth <= 768 ? false : true;
-    };
-    const opens = () => {
-      statusSidebar.value = true;
-      console.log(statusSidebar.value);
-      
-    };
     // init
     const initMap = () => {
       const map = new google.maps.Map(document.getElementById("map"), {
@@ -34,17 +22,13 @@ createApp({
       });
     };
 
+    window.initMap = initMap;
     onMounted(() => {
-      window.addEventListener("resize", updateWidth);
       initMap();
-      window.initMap = initMap;
     });
 
     return {
       select,
-      windowWidth,
-      statusSidebar,
-      opens,
     };
   },
 }).mount("#app");

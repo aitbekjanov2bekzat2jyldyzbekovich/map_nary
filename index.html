@@ -10,96 +10,100 @@
     <link rel="stylesheet" href="./main.css" />
     <title>NarynMap</title>
   </head>
-  <body class="dark:dark:bg-gray-800">
+  <body class="dark:bg-gray-800">
     <div id="app">
-      <div class="flex justify-between items-start">
-        <button
-          @click="opens()"
-          v-if="windowWidth <= 768 "
-          type="button"
-          class="inline-flex items-center p-2 mt-2 ms-3 text-sm text-gray-500 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600 float-left mr-1"
+      <button
+        data-drawer-target="default-sidebar"
+        data-drawer-toggle="default-sidebar"
+        aria-controls="default-sidebar"
+        type="button"
+        class="inline-flex items-center p-2 mt-2 ms-3 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
+      >
+        <span class="sr-only">Open sidebar</span>
+        <svg
+          class="w-6 h-6"
+          aria-hidden="true"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+          xmlns="http://www.w3.org/2000/svg"
         >
-          <span class="sr-only">Open sidebar</span>
-          <svg
-            class="w-6 h-6"
-            aria-hidden="true"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              clip-rule="evenodd"
-              fill-rule="evenodd"
-              d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z"
-            ></path>
-          </svg>
-        </button>
+          <path
+            clip-rule="evenodd"
+            fill-rule="evenodd"
+            d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z"
+          ></path>
+        </svg>
+      </button>
 
-        <aside v-else-if="statusSidebar === true" class="z-40 w-80 h-screen">
-          <div
-            class="h-full px-3 py-4 overflow-y-auto bg-gray-50 dark:bg-gray-800 font-medium"
-          >
-            <ul class="space-y-10">
-              <li class="flex items-center">
-                <img src="./img/Naryn_coa.svg.png" class="w-14 h-14" />
-                <h1
-                  class="flex items-center p-2 text-blue-700 rounded-lg ms-3 font-bold"
-                >
-                  Нарынская карта
-                </h1>
-              </li>
-              <li>
-                <form class="max-w-sm mx-auto">
-                  <label
-                    for="countries"
-                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                    >Фильтр по категории:</label
-                  >
-                  <select
-                    id="countries"
-                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  >
-                    <option v-for="i in select" :value="i.value">
-                      {{i.name}}
-                    </option>
-                  </select>
-                </form>
-              </li>
-
-              <li
-                class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group cursor-pointer"
+      <aside
+        id="default-sidebar"
+        class="fixed top-0 left-0 z-40 w-64 h-screen transition-transform -translate-x-full sm:translate-x-0"
+        aria-label="Sidebar"
+      >
+        <div
+          class="h-full px-3 py-4 overflow-y-auto bg-gray-50 dark:bg-gray-800 font-medium"
+        >
+          <ul class="space-y-10">
+            <li class="flex items-center">
+              <img src="./img/Naryn_coa.svg.png" class="w-14 h-14" />
+              <h1
+                class="flex items-center p-2 text-blue-700 rounded-lg ms-3 font-bold"
               >
-                <svg
-                  class="w-4 h-4 text-gray-500 dark:text-gray-400"
-                  aria-hidden="true"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 20 20"
+                Нарынская карта
+              </h1>
+            </li>
+            <li>
+              <form class="max-w-sm mx-auto">
+                <label
+                  for="countries"
+                  class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >Фильтр по категории:</label
                 >
-                  <path
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
-                  />
-                </svg>
-                <span class="flex-1 ms-3 whitespace-nowrap">Поиск</span>
-              </li>
-            </ul>
-          </div>
-        </aside>
+                <select
+                  id="countries"
+                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                >
+                  <option v-for="i in select" :value="i.value">
+                    {{i.name}}
+                  </option>
+                </select>
+              </form>
+            </li>
 
-        <div class="p-4 w-full h-screen" id="map"></div>
-      </div>
+            <li
+              class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group cursor-pointer"
+            >
+              <svg
+                class="w-4 h-4 text-gray-500 dark:text-gray-400"
+                aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
+                />
+              </svg>
+              <span class="flex-1 ms-3 whitespace-nowrap">Поиск</span>
+            </li>
+          </ul>
+        </div>
+      </aside>
+
+      <div class="p-4 sm:ml-64 h-screen" id="map"></div>
     </div>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCiUWumGJwyRG-QBNuGOnci1v2A7o8qJZM"></script>
     <script
       src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCiUWumGJwyRG-QBNuGOnci1v2A7o8qJZM&callback=initMap"
       defer
     ></script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCiUWumGJwyRG-QBNuGOnci1v2A7o8qJZM"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
     <script src="./app.js"></script>
   </body>
 </html>

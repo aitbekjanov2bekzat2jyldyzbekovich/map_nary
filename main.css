@@ -8,5 +8,9 @@
 
 body {
   background-color: #f2f2f3;
+}
 
+.gm-control-active,
+.gm-fullscreen-control {
+  display: none !important;
 }
