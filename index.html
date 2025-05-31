@@ -12,15 +12,17 @@
   </head>
   <body class="dark:bg-gray-800">
     <div id="app">
-      <content :select="select"></content>
+      <content></content>
     </div>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-   
+
     <script
-      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCiUWumGJwyRG-QBNuGOnci1v2A7o8qJZM&callback=initMap"
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCiUWumGJwyRG-QBNuGOnci1v2A7o8qJZM"
+      async
       defer
     ></script>
+
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCiUWumGJwyRG-QBNuGOnci1v2A7o8qJZM"></script>
     <script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
     <script src="./app.js" type="module"></script>

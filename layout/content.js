@@ -63,10 +63,22 @@ export default {
     };
   },
   mounted() {
-    const map = new google.maps.Map(document.getElementById("map"), {
-      center: { lat: 41.433678, lng: 75.983283 },
-      zoom: 10,
-    });
-    window.initMap = () => map;
+    const initMap = () => {
+      const map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: -34.397, lng: 150.644 },
+        zoom: 8,
+      });
+    };
+
+    if (window.google && window.google.maps) {
+      initMap();
+    } else {
+      const interval = setInterval(() => {
+        if (window.google && window.google.maps) {
+          clearInterval(interval);
+          initMap();
+        }
+      }, 100);
+    }
   },
 };
