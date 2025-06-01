@@ -62,23 +62,42 @@ export default {
       ],
     };
   },
-  mounted() {
-    const initMap = () => {
-      const map = new google.maps.Map(document.getElementById("map"), {
-        center: { lat: -34.397, lng: 150.644 },
-        zoom: 8,
-      });
-    };
+  methods: {
+    initt() {
+      async function initMap() {
+        const map = new google.maps.Map(document.getElementById("map"), {
+          center: { lat: 41.433678, lng: 75.983283 },
+          zoom: 8,
+        });
 
-    if (window.google && window.google.maps) {
-      initMap();
-    } else {
-      const interval = setInterval(() => {
-        if (window.google && window.google.maps) {
-          clearInterval(interval);
-          initMap();
-        }
-      }, 100);
-    }
+        const response = await fetch(
+          "https://narynmap-35e43-default-rtdb.firebaseio.com/map.json"
+        );
+        const ress = await response.json();
+        console.log(ress);
+
+        map.data.addGeoJson(ress);
+        map.data.setStyle({
+          fillColor: "blue",
+          strokeColor: "red",
+          strokeWeight: 2,
+          fillOpacity: 0.2,
+        });
+      }
+
+      if (window.google && window.google.maps) {
+        initMap();
+      } else {
+        const interval = setInterval(() => {
+          if (window.google && window.google.maps) {
+            clearInterval(interval);
+            initMap();
+          }
+        }, 100);
+      }
+    },
+  },
+  mounted() {
+    this.initt();
   },
 };
