@@ -110,7 +110,7 @@ export default {
       </li>
         <li>
         <span class="text-base font-bold">Тип:</span>
-        <span class="text-sm font-medium">Электростанция</span>
+        <span class="text-sm font-medium">Электростанция </span>
       </li>
     </ul>
                   <p class="text-base">${m.description}</p>
