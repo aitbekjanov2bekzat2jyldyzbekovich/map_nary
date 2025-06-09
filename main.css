@@ -14,3 +14,20 @@ body {
 .gm-fullscreen-control {
   display: none !important;
 }
+
+.gm-style-iw-tc {
+  display: none !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .gm-style-iw,
+  .gm-style-iw-c,
+  .gm-style-iw-d {
+    background-color: #1f2937 !important;
+    color: #f2f2f3;
+  }
+  *::-webkit-scrollbar {
+    width: 0 !important;
+    height: 0 !important;
+  }
+}
