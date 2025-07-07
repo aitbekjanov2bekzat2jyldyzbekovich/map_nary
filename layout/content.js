@@ -1,4 +1,5 @@
 import sidNoAdmin from "../components/sidNoAdmin.js";
+
 export default {
   template: `<button
         data-drawer-target="default-sidebar"
@@ -40,15 +41,14 @@ export default {
                 Нарынская карта
               </h1>
             </li>
-              <sidNoAdmin :select="select"></sidNoAdmin>
+            <sidNoAdmin :select="select" @get-category="filterMarker"></sidNoAdmin>
           </ul>
         </div>
       </aside>
 
       <div class="p-4 sm:ml-64 h-screen" id="map"></div>`,
-
   components: {
-    sidNoAdmin, //
+    sidNoAdmin,
   },
   data() {
     return {
@@ -60,71 +60,38 @@ export default {
         { value: "return_energy", name: "ВИЭ" },
         { value: "other", name: "Прочее" },
       ],
+      markers: null,
+      markersList: [], // для хранения google.maps.Marker объектов
+      map: null,
     };
   },
   methods: {
-    async getData(name) {
-      const response = await fetch(
-        `https://narynmap-35e43-default-rtdb.firebaseio.com/${name}.json`
-      );
-      const ress = await response.json();
-      return await ress;
+    async getData(name, option = "") {
+      const url = `https://narynmap-35e43-default-rtdb.firebaseio.com/${name}.json${option}`;
+
+      const response = await fetch(url);
+      const data = await response.json();
+      return data;
     },
+
     initt() {
       const self = this;
       async function initMap() {
-        const map = new google.maps.Map(document.getElementById("map"), {
+        self.map = new google.maps.Map(document.getElementById("map"), {
           center: { lat: 41.433678, lng: 75.983283 },
           zoom: 8,
         });
         const naryn = await self.getData("map");
-        map.data.addGeoJson(naryn);
-        map.data.setStyle({
+        self.markers = await self.getData("markers");
+        self.map.data.addGeoJson(naryn);
+        self.map.data.setStyle({
           fillColor: "blue",
           strokeColor: "red",
           strokeWeight: 2,
           fillOpacity: 0.2,
         });
 
-        renderMarker();
-
-        async function renderMarker() {
-          const markers = await self.getData("markers");
-
-          await markers.data.forEach((m) => {
-            console.log(m);
-
-            const marker = new google.maps.Marker({
-              position: { lat: m.lat, lng: m.lng },
-              map: map,
-            });
-            const infoWindow = new google.maps.InfoWindow({
-              content: `
-              <div class="p-2">
-                 <div class="mb-5">
-                  <h3 class="mb-2 text-center text-blue-700 font-bold text-xl">${m.title}</h3>
-                                 <ul class="mb-5">
-      <li>
-        <span class="text-base font-bold">Адрес:</span>
-        <span class="text-sm font-medium">Ул. Самансур Ата 45</span>
-      </li>
-        <li>
-        <span class="text-base font-bold">Тип:</span>
-        <span class="text-sm font-medium">Электростанция </span>
-      </li>
-    </ul>
-                  <p class="text-base">${m.description}</p>
-                  </div>
-      
-                  <img class="w-full  h-68 " src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSiUEATVBgNVr7ri-sJMGwdrzd5QwDE9rZOEA&s" alt="">
-              </div>`,
-            });
-
-            marker.addListener("click", () => {
-              infoWindow.open(map, marker);
-            });
-          });
-        }
+        self.renderMarker();
       }
 
       if (window.google && window.google.maps) {
@@ -137,6 +104,76 @@ export default {
           }
         }, 100);
       }
+    },
+
+    async renderMarker() {
+      if (this.markersList.length) {
+        this.markersList.forEach((m) => m.setMap(null));
+        this.markersList = [];
+        console.log("fdfdf");
+      }
+
+      if (!this.markers) {
+        return;
+      }
+
+      Object.values(this.markers).forEach((m) => {
+        const marker = new google.maps.Marker({
+          position: { lat: m.lat, lng: m.lng },
+          map: this.map,
+        });
+
+        this.markersList.push(marker);
+
+        const infoWindow = new google.maps.InfoWindow({
+          content: `
+              <div class="p-2">
+                <div class="mb-5">
+                  <h3 class="mb-2 text-center text-blue-700 font-bold text-xl">${
+                    m.title
+                  }</h3>
+                  <ul class="mb-5">
+                    <li>
+                      <span class="text-base font-bold">Адрес:</span>
+                      <span class="text-sm font-medium">${
+                        m.address || "Адрес не указан"
+                      }</span>
+                    </li>
+                    <li>
+                      <span class="text-base font-bold">Тип:</span>
+                      <span class="text-sm font-medium">${
+                        m.type || "Неизвестно"
+                      }</span>
+                    </li>
+                  </ul>
+                  <p class="text-base">${m.description || ""}</p>
+                </div>
+                <img class="w-full h-68" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSiUEATVBgNVr7ri-sJMGwdrzd5QwDE9rZOEA&s" alt="">
+              </div>
+            `,
+        });
+
+        marker.addListener("click", () => {
+          infoWindow.open(this.map, marker);
+        });
+      });
+    },
+
+    async filterMarker(category) {
+      let option = "";
+      if (category) {
+        // Кодируем кавычки и другие символы для URL
+        option = `?orderBy=%22category%22&equalTo=%22${encodeURIComponent(
+          category
+        )}%22`;
+        this.markers = await this.getData("markers", option);
+      }
+      setTimeout(() => {
+        this.renderMarker();
+      }, 1000);
+
+      console.log("Фильтр по категории:", category);
+      console.log(this.markers);
     },
   },
   mounted() {
