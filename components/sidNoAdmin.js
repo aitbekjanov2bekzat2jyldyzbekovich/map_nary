@@ -6,11 +6,12 @@ export default {
     },
   },
   methods: {
-    sendCategory(event) {
-      const selected = event.target.value;
-      this.$emit("get-category", selected);
+    async sendCategory(event) {
+      await this.$router.push(`/filter=/${event.target.value}`);
+      await location.reload();
     },
   },
+
   template: `
     <form class="max-w-sm mx-auto">
       <label

@@ -41,7 +41,7 @@ export default {
                 Нарынская карта
               </h1>
             </li>
-            <sidNoAdmin :select="select" @get-category="filterMarker"></sidNoAdmin>
+            <sidNoAdmin :select="select" @get-category=""></sidNoAdmin>
           </ul>
         </div>
       </aside>
@@ -76,13 +76,19 @@ export default {
 
     initt() {
       const self = this;
+      const option =
+        this.$route.name == "category"
+          ? `?orderBy="${this.$route.name}"&equalTo="${this.$route.params.name}"`
+          : "";
+
       async function initMap() {
         self.map = new google.maps.Map(document.getElementById("map"), {
           center: { lat: 41.433678, lng: 75.983283 },
           zoom: 8,
         });
         const naryn = await self.getData("map");
-        self.markers = await self.getData("markers");
+        self.markers = await self.getData("markers", option);
+
         self.map.data.addGeoJson(naryn);
         self.map.data.setStyle({
           fillColor: "blue",
@@ -91,7 +97,7 @@ export default {
           fillOpacity: 0.2,
         });
 
-        self.renderMarker();
+        await self.renderMarker(self.markers);
       }
 
       if (window.google && window.google.maps) {
@@ -106,24 +112,18 @@ export default {
       }
     },
 
-    async renderMarker() {
-      if (this.markersList.length) {
-        this.markersList.forEach((m) => m.setMap(null));
-        this.markersList = [];
-        console.log("fdfdf");
-      }
+    async renderMarker(markers) {
+      const arr = Object.values(markers);
+      console.log(arr);
 
-      if (!this.markers) {
-        return;
-      }
+      this.markersList.forEach((marker) => marker.setMap(null));
+      this.markersList = [];
 
-      Object.values(this.markers).forEach((m) => {
+      arr.forEach((m) => {
         const marker = new google.maps.Marker({
           position: { lat: m.lat, lng: m.lng },
           map: this.map,
         });
-
-        this.markersList.push(marker);
 
         const infoWindow = new google.maps.InfoWindow({
           content: `
@@ -157,23 +157,6 @@ export default {
           infoWindow.open(this.map, marker);
         });
       });
-    },
-
-    async filterMarker(category) {
-      let option = "";
-      if (category) {
-        // Кодируем кавычки и другие символы для URL
-        option = `?orderBy=%22category%22&equalTo=%22${encodeURIComponent(
-          category
-        )}%22`;
-        this.markers = await this.getData("markers", option);
-      }
-      setTimeout(() => {
-        this.renderMarker();
-      }, 1000);
-
-      console.log("Фильтр по категории:", category);
-      console.log(this.markers);
     },
   },
   mounted() {

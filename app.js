@@ -6,11 +6,15 @@ const Home = {
 const Admin = {
   template: `<layout-content></layout-content>`,
 };
+const Category = {
+  template: `<layout-content></layout-content>`,
+};
 
 const routes = [
   { path: "/", component: Home },
   { path: "/admin", component: Admin },
   { path: "/:pathMatch(.*)*", redirect: "/" },
+  { path: "/filter=/:name", component: Category, name: "category" },
 ];
 const router = VueRouter.createRouter({
   history: VueRouter.createWebHashHistory(),
