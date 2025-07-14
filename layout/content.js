@@ -1,13 +1,17 @@
 import sidNoAdmin from "../components/sidNoAdmin.js";
+import windowImg from "../components/windowImg.js";
 
 export default {
-  template: `<button
+  template: `
+  <windowImg :info="imgMoadal" @close="imgMoadal =[]" />
+  <button
         data-drawer-target="default-sidebar"
         data-drawer-toggle="default-sidebar"
         aria-controls="default-sidebar"
         type="button"
         class="inline-flex items-center p-2 mt-2 ms-3 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
       >
+
         <span class="sr-only">Open sidebar</span>
         <svg
           class="w-6 h-6"
@@ -49,6 +53,7 @@ export default {
       <div class="p-4 sm:ml-64 h-screen" id="map"></div>`,
   components: {
     sidNoAdmin,
+    windowImg,
   },
   data() {
     return {
@@ -63,9 +68,14 @@ export default {
       markers: null,
       markersList: [], // для хранения google.maps.Marker объектов
       map: null,
+      imgMoadal: [],
     };
   },
   methods: {
+    openImageModal(imageList) {
+      this.imgMoadal = imageList;
+     
+    },
     async getData(name, option = "") {
       const url = `https://narynmap-35e43-default-rtdb.firebaseio.com/${name}.json${option}`;
 
@@ -132,34 +142,75 @@ export default {
                   <h3 class="mb-2 text-center text-blue-700 font-bold text-xl">${
                     m.title
                   }</h3>
-                  <ul class="mb-5">
-                    <li>
-                      <span class="text-base font-bold">Адрес:</span>
-                      <span class="text-sm font-medium">${
-                        m.address || "Адрес не указан"
-                      }</span>
-                    </li>
-                    <li>
-                      <span class="text-base font-bold">Тип:</span>
-                      <span class="text-sm font-medium">${
-                        m.type || "Неизвестно"
-                      }</span>
-                    </li>
-                  </ul>
-                  <p class="text-base">${m.description || ""}</p>
                 </div>
-                <img class="w-full h-68" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSiUEATVBgNVr7ri-sJMGwdrzd5QwDE9rZOEA&s" alt="">
+                <div class="mb-5">
+                    <p class="text-sm ">${
+                      m.description || "Нету данных ..."
+                    } </p>
+                </div>
+                <div class="mb-5">
+                <ul>
+                <h3 class="font-bold text-lg mb-5">Более подробная информация о ${
+                  m.title
+                }</h3>
+                <li class="mb-2">
+                  <span class="text-base font-bold">Расположение: </span>
+                  <span class="text-sm">${m.place || "Нету данных ..."}</span>
+                </li>
+                  <li class="mb-2">
+                  <span class="text-base font-bold">Статус: </span>
+                  <span class="text-sm">${m.status || "Нету данных ..."}</span>
+                </li>
+                  <li class="mb-2">
+                  <span class="text-base font-bold">Цель проекта: </span>
+                  <span  class="text-sm">${
+                    m.Purpose_of_construction || "Нету данных ..."
+                  }</span>
+                </li>
+                
+            
+                  <li class="mb-2">
+                  <span class="text-base font-bold"> Партнеры: </span>
+                  <span class="text-sm">${
+                    m.partners || "Нету данных ..."
+                  }</span>
+                </li>
+                </ul>
+                </div>
+                <div class="bg-indigo-300 cursor-pointer">
+             <img id="marker-img-${m.lat}-${
+            m.lng
+          }" class="object-cover w-full h-48" src="${
+            m.images[0] ||
+            "https://i0.wp.com/learn.onemonth.com/wp-content/uploads/2017/08/1-10.png?w=845&ssl=1"
+          }" alt="">
+                </div>
               </div>
             `,
         });
 
         marker.addListener("click", () => {
           infoWindow.open(this.map, marker);
+
+          google.maps.event.addListenerOnce(infoWindow, "domready", () => {
+            const img = document.getElementById(`marker-img-${m.lat}-${m.lng}`);
+            if (img) {
+              img.addEventListener("click", () => {
+                this.openImageModal(m.images);
+              });
+            }
+          });
         });
       });
     },
   },
   mounted() {
     this.initt();
+  },
+  watch: {
+    "$route.params.name"(newCategory) {
+      this.initt();
+      console.log();
+    },
   },
 };

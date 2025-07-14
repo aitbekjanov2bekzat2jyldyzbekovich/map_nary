@@ -7,9 +7,13 @@ export default {
   },
   methods: {
     async sendCategory(event) {
-      await this.$router.push(`/filter=/${event.target.value}`);
-      await location.reload();
-    },
+      const category = event.target.value.trim();
+      if (category) {
+        await this.$router.push(`/filter=/${category}`);
+      } else {
+        await this.$router.push("/");
+      }
+    }
   },
 
   template: `
