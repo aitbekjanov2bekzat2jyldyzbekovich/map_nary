@@ -9,11 +9,24 @@ export default {
     async sendCategory(event) {
       const category = event.target.value.trim();
       if (category) {
-        await this.$router.push(`/filter=/${category}`);
+        try {
+          await this.$router.push(`/filter=/${category}`);
+          const a = await this.statusServer();
+        } catch {
+        } finally {
+          this.$emit("eventMessage", category);
+        }
       } else {
         await this.$router.push("/");
       }
-    }
+    },
+    statusServer() {
+      const originalFetch = window.fetch;
+      window.fetch = async (...args) => {
+        const response = await originalFetch(...args);
+        return response;
+      };
+    },
   },
 
   template: `
@@ -32,6 +45,7 @@ export default {
         <option v-for="i in select" :value="i.value">
           {{ i.name }}
         </option>
+       
       </select>
     </form>
   `,

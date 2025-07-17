@@ -40,3 +40,19 @@ body {
 .v-leave-to {
   opacity: 0;
 }
+
+/* Transition classes */
+.alert-slide-enter-from,
+.alert-slide-leave-to {
+  opacity: 0;
+  transform: translateX(100%);
+}
+.alert-slide-enter-active,
+.alert-slide-leave-active {
+  transition: all 0.4s ease;
+}
+.alert-slide-enter-to,
+.alert-slide-leave-from {
+  opacity: 1;
+  transform: translateX(0);
+}

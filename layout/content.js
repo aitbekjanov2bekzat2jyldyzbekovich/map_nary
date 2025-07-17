@@ -1,9 +1,11 @@
 import sidNoAdmin from "../components/sidNoAdmin.js";
 import windowImg from "../components/windowImg.js";
+import appAlert from "../components/alerts.js";
 
 export default {
   template: `
   <windowImg :info="imgMoadal" @close="imgMoadal =[]" />
+  <appAlert :alertOp="alertMessage" @clearalert="alertMessage = {}"/>
   <button
         data-drawer-target="default-sidebar"
         data-drawer-toggle="default-sidebar"
@@ -45,7 +47,7 @@ export default {
                 Нарынская карта
               </h1>
             </li>
-            <sidNoAdmin :select="select" @get-category=""></sidNoAdmin>
+            <sidNoAdmin :select="select" @eventMessage="filterMessage"></sidNoAdmin>
           </ul>
         </div>
       </aside>
@@ -54,6 +56,7 @@ export default {
   components: {
     sidNoAdmin,
     windowImg,
+    appAlert,
   },
   data() {
     return {
@@ -65,16 +68,64 @@ export default {
         { value: "return_energy", name: "ВИЭ" },
         { value: "other", name: "Прочее" },
       ],
-      markers: null,
+      markers: [],
       markersList: [], // для хранения google.maps.Marker объектов
       map: null,
       imgMoadal: [],
+      alertMessage: {},
     };
   },
   methods: {
+    filterMessage(n) {
+      this.alertMessage = {};
+      switch (n) {
+        case "power":
+          this.sendMessage(
+            "Успешно!",
+            `Электростанции: ${Object.values(this.markers).length}`,
+            "blue"
+          );
+          break;
+        case "minerals":
+          this.sendMessage(
+            "Успешно!",
+            `Минералы: ${Object.values(this.markers).length}`,
+            "blue"
+          );
+          break;
+        case "future_power":
+          this.sendMessage(
+            "Успешно!",
+            `Строящиеся Электростанции: ${Object.values(this.markers).length}`,
+            "blue"
+          );
+          break;
+        case "return_energy":
+          this.sendMessage(
+            "Успешно!",
+            `ВИЭ: ${Object.values(this.markers).length}`,
+            "blue"
+          );
+          break;
+        case "other":
+          this.sendMessage(
+            "Успешно!",
+            `Прочее: ${Object.values(this.markers).length}`,
+            "blue"
+          );
+          break;
+      }
+    },
     openImageModal(imageList) {
       this.imgMoadal = imageList;
-     
+    },
+    sendMessage(title, message, color) {
+      this.alertMessage = {
+        status: true,
+        title: title,
+        color: color,
+        message: message,
+      };
     },
     async getData(name, option = "") {
       const url = `https://narynmap-35e43-default-rtdb.firebaseio.com/${name}.json${option}`;
@@ -210,7 +261,6 @@ export default {
   watch: {
     "$route.params.name"(newCategory) {
       this.initt();
-      console.log();
     },
   },
 };
