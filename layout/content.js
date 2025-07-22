@@ -51,8 +51,12 @@ export default {
           </ul>
         </div>
       </aside>
-
-      <div class="p-4 sm:ml-64 h-screen" id="map"></div>`,
+        <div>
+     
+           <div class="p-4 sm:ml-64 h-screen" id="map" />
+  
+        </div>
+   `,
   components: {
     sidNoAdmin,
     windowImg,
@@ -135,7 +139,7 @@ export default {
       return data;
     },
 
-    initt() {
+    async initt() {
       const self = this;
       const option =
         this.$route.name == "category"
@@ -175,8 +179,17 @@ export default {
 
     async renderMarker(markers) {
       const arr = Object.values(markers);
-      console.log(arr);
-
+      const icons = {
+        power:
+          "https://img.icons8.com/?size=100&id=Ext6HcYgPkyd&format=png&color=000000",
+        minerals:
+          "https://img.icons8.com/?size=100&id=YJNwhvDRJXes&format=png&color=000000",
+        future_power:
+          "https://img.icons8.com/?size=100&id=Ext6HcYgPkyd&format=png&color=000000",
+        return_energy:
+          "https://img.icons8.com/?size=100&id=DlaHJjjCFSFQ&format=png&color=000000",
+        other: "",
+      };
       this.markersList.forEach((marker) => marker.setMap(null));
       this.markersList = [];
 
@@ -184,6 +197,12 @@ export default {
         const marker = new google.maps.Marker({
           position: { lat: m.lat, lng: m.lng },
           map: this.map,
+          icon: {
+            url: icons[m.category], // путь к картинке
+            scaledSize: new google.maps.Size(40, 40), // задаем ширину и высоту
+            origin: new google.maps.Point(0, 0), // точка начала изображения
+            anchor: new google.maps.Point(20, 40), // якорная точка (смещение)
+          },
         });
 
         const infoWindow = new google.maps.InfoWindow({
