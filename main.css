@@ -8,6 +8,7 @@
 
 body {
   background-color: #f2f2f3;
+  overflow: hidden;
 }
 
 .gm-control-active,
