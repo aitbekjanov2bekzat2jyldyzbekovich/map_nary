@@ -8,7 +8,7 @@ export default {
   template: `
   
 
-  <loginAdmin @login="login"  :status ="statusLogin"/>
+  <loginAdmin @login="login" :loader="loader"  :status ="statusLogin"/>
   <windowImg :info="imgMoadal" @close="imgMoadal =[]" />
   <appAlert :alertOp="alertMessage" @clearalert="alertMessage = {}"/>
   <button
@@ -87,12 +87,14 @@ export default {
       imgMoadal: [],
       alertMessage: {},
       API_KEY: "AIzaSyDWNlcEM0stBIPMDdVTgXYwKPSkaDmSzsI",
+      loader: false,
 
       statusLogin: false,
     };
   },
   methods: {
     async login(userData) {
+      this.loader = true;
       const url = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${this.API_KEY}`;
 
       try {
@@ -114,11 +116,16 @@ export default {
           localStorage.setItem("refreshToken", result.refreshToken);
           this.checkRefreshToken();
           this.statusLogin = false;
+          this.sendMessage("Сервер:", "Вы вошли в админ-панель !", "green");
         } else {
-          console.error("Login failed:", result.error.message);
+          console.error("Login failed:");
+          this.sendMessage("Сервер:", result.error.message, "red");
         }
       } catch (error) {
         console.error("Network or other error:", error);
+        this.sendMessage("Сервер:", error, "red");
+      } finally {
+        this.loader = false;
       }
     },
 
