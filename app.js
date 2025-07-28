@@ -11,8 +11,12 @@ const Category = {
 };
 
 const routes = [
-  { path: "/", component: Home },
-  { path: "/admin", component: Admin },
+  { path: "/", name: "home", component: Home },
+  {
+    path: "/admin",
+    name: "admin",
+    component: Admin,
+  },
   { path: "/:pathMatch(.*)*", redirect: "/" },
   { path: "/filter=/:name", component: Category, name: "category" },
 ];

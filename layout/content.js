@@ -1,9 +1,14 @@
 import sidNoAdmin from "../components/sidNoAdmin.js";
 import windowImg from "../components/windowImg.js";
 import appAlert from "../components/alerts.js";
+import adminSide from "../components/adminSide.js";
+import loginAdmin from "../components/loginAdmin.js";
 
 export default {
   template: `
+  
+
+  <loginAdmin @login="login"  :status ="statusLogin"/>
   <windowImg :info="imgMoadal" @close="imgMoadal =[]" />
   <appAlert :alertOp="alertMessage" @clearalert="alertMessage = {}"/>
   <button
@@ -36,9 +41,9 @@ export default {
         aria-label="Sidebar"
       >
         <div
-          class="h-full px-3 py-4 overflow-y-auto bg-gray-50 dark:bg-gray-800 font-medium"
+          class="h-full px-3 py-4 overflow-y-auto bg-gray-50 dark:bg-gray-800 font-medium space-y-10"
         >
-          <ul class="space-y-10">
+          <ul class="">
             <li class="flex items-center">
               <img src="./img/Naryn_coa.svg.png" class="w-14 h-14" />
               <h1
@@ -47,20 +52,24 @@ export default {
                 Нарынская карта
               </h1>
             </li>
-            <sidNoAdmin :select="select" @eventMessage="filterMessage"></sidNoAdmin>
           </ul>
+          
+           <sidNoAdmin v-show="this.$route.name === 'home'" :select="select" @eventMessage="filterMessage"></sidNoAdmin>
+          <adminSide v-show="this.$route.name === 'admin'"></adminSide>
         </div>
       </aside>
         <div>
      
            <div class="p-4 sm:ml-64 h-screen" id="map" />
-  
+
         </div>
    `,
   components: {
     sidNoAdmin,
     windowImg,
     appAlert,
+    adminSide,
+    loginAdmin,
   },
   data() {
     return {
@@ -77,9 +86,85 @@ export default {
       map: null,
       imgMoadal: [],
       alertMessage: {},
+      API_KEY: "AIzaSyDWNlcEM0stBIPMDdVTgXYwKPSkaDmSzsI",
+
+      statusLogin: false,
     };
   },
   methods: {
+    async login(userData) {
+      const url = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${this.API_KEY}`;
+
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: userData.email,
+            password: userData.password,
+            returnSecureToken: true,
+          }),
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          localStorage.setItem("refreshToken", result.refreshToken);
+          this.checkRefreshToken();
+          this.statusLogin = false;
+        } else {
+          console.error("Login failed:", result.error.message);
+        }
+      } catch (error) {
+        console.error("Network or other error:", error);
+      }
+    },
+
+    async statusLoginOpen() {
+      const status = await this.checkRefreshToken();
+      console.log(status);
+      console.log();
+
+      if (!status && this.$route.name === "admin") {
+        this.statusLogin = true;
+      } else {
+        this.statusLogin = false;
+      }
+    },
+    logout() {
+      localStorage.removeItem("refreshToken");
+    },
+    async checkRefreshToken() {
+      const refreshToken = localStorage.getItem("refreshToken");
+      console.log(refreshToken);
+
+      const url = `https://securetoken.googleapis.com/v1/token?key=${this.API_KEY}`;
+      const params = new URLSearchParams();
+      params.append("grant_type", "refresh_token");
+      params.append("refresh_token", refreshToken);
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: params.toString(),
+        });
+
+        if (response.ok) {
+          console.log(true);
+          return true;
+        } else {
+          this.logout();
+          console.log("выход из акк");
+          return false;
+        }
+      } catch (err) {
+        return false;
+      }
+    },
     filterMessage(n) {
       this.alertMessage = {};
       switch (n) {
@@ -124,6 +209,7 @@ export default {
       this.imgMoadal = imageList;
     },
     sendMessage(title, message, color) {
+      this.alertMessage = {};
       this.alertMessage = {
         status: true,
         title: title,
@@ -276,10 +362,16 @@ export default {
   },
   mounted() {
     this.initt();
+    this.checkRefreshToken();
   },
   watch: {
-    "$route.params.name"(newCategory) {
-      this.initt();
+    "$route.params.name": {
+      handler(newCategory) {
+        this.statusLoginOpen();
+
+        this.initt();
+      },
+      immediate: true, // <-- теперь правильно
     },
   },
 };
