@@ -6,10 +6,8 @@ import loginAdmin from "../components/loginAdmin.js";
 
 export default {
   template: `
-  
-
-  <loginAdmin @login="login" :loader="loader"  :status ="statusLogin"/>
-  <windowImg :info="imgMoadal" @close="imgMoadal =[]" />
+  <loginAdmin @login="login" :loader="loader" :status="statusLogin"/>
+  <windowImg :info="imgModal" @close="imgModal =[]" />
   <appAlert :alertOp="alertMessage" @clearalert="alertMessage = {}"/>
   <button
         data-drawer-target="default-sidebar"
@@ -18,7 +16,6 @@ export default {
         type="button"
         class="inline-flex items-center p-2 mt-2 ms-3 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
       >
-
         <span class="sr-only">Open sidebar</span>
         <svg
           class="w-6 h-6"
@@ -54,14 +51,13 @@ export default {
             </li>
           </ul>
           
-           <sidNoAdmin v-show="this.$route.name === 'home'" :select="select" @eventMessage="filterMessage"></sidNoAdmin>
-          <adminSide v-show="this.$route.name === 'admin'"></adminSide>
+           
+           <adminSide v-if="this.$route.name === 'admin'" :time="time"></adminSide>
+           <sidNoAdmin v-else :select="select" @eventMessage="filterMessage"></sidNoAdmin>
         </div>
       </aside>
         <div>
-     
            <div class="p-4 sm:ml-64 h-screen" id="map" />
-
         </div>
    `,
   components: {
@@ -81,14 +77,14 @@ export default {
         { value: "return_energy", name: "ВИЭ" },
         { value: "other", name: "Прочее" },
       ],
+      time: "0 : 0 : 0",
       markers: [],
-      markersList: [], // для хранения google.maps.Marker объектов
+      markersList: [],
       map: null,
-      imgMoadal: [],
+      imgModal: [],
       alertMessage: {},
       API_KEY: "AIzaSyDWNlcEM0stBIPMDdVTgXYwKPSkaDmSzsI",
       loader: false,
-
       statusLogin: false,
     };
   },
@@ -100,9 +96,7 @@ export default {
       try {
         const response = await fetch(url, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             email: userData.email,
             password: userData.password,
@@ -113,130 +107,97 @@ export default {
         const result = await response.json();
 
         if (response.ok) {
+          // Сохраняем refreshToken и абсолютное время истечения
+          const expiresAt = Date.now() + result.expiresIn * 1000;
           localStorage.setItem("refreshToken", result.refreshToken);
-          this.checkRefreshToken();
+          localStorage.setItem("expiresIn", expiresAt);
+
           this.statusLogin = false;
-          this.sendMessage("Сервер:", "Вы вошли в админ-панель !", "green");
+          this.sendMessage("Сервер:", "Вы вошли в аккаунт", "green");
         } else {
-          console.error("Login failed:");
           this.sendMessage("Сервер:", result.error.message, "red");
         }
       } catch (error) {
-        console.error("Network or other error:", error);
-        this.sendMessage("Сервер:", error, "red");
+        this.sendMessage("Сервер:", error.message || error, "red");
       } finally {
         this.loader = false;
       }
     },
 
-    async statusLoginOpen() {
-      const status = await this.checkRefreshToken();
-      console.log(status);
-      console.log();
-
-      if (!status && this.$route.name === "admin") {
-        this.statusLogin = true;
-      } else {
-        this.statusLogin = false;
-      }
-    },
     logout() {
       localStorage.removeItem("refreshToken");
+      localStorage.removeItem("expiresIn");
+      this.statusLogin = this.$route.name == "admin" ? true : false;
+      this.$route.name == "admin"
+        ? this.sendMessage("Система:", "Вы вышли из аккаунта !", "blue")
+        : false;
     },
+
     async checkRefreshToken() {
       const refreshToken = localStorage.getItem("refreshToken");
-      console.log(refreshToken);
+      const expiresAt = localStorage.getItem("expiresIn");
 
-      const url = `https://securetoken.googleapis.com/v1/token?key=${this.API_KEY}`;
-      const params = new URLSearchParams();
-      params.append("grant_type", "refresh_token");
-      params.append("refresh_token", refreshToken);
-      try {
-        const response = await fetch(url, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: params.toString(),
-        });
-
-        if (response.ok) {
-          console.log(true);
-          return true;
-        } else {
-          this.logout();
-          console.log("выход из акк");
-          return false;
-        }
-      } catch (err) {
+      if (!refreshToken || !expiresAt) {
+        console.warn("Нет токена. Требуется вход.");
+        this.logout();
         return false;
       }
+
+      const now = Date.now();
+      const timeLeft = Math.floor((expiresAt - now) / 1000);
+
+      if (timeLeft <= 0) {
+        console.warn("⛔ Токен истёк. Требуется вход.");
+        this.logout();
+        return false;
+      }
+
+      if (timeLeft < 300) {
+        this.sendMessage(
+          "Система:",
+          "Система выйдет из аккауна через 5 мин. \n вам нужно снова войти в аккаунт !",
+          "yellow"
+        );
+      }
+
+      return true;
     },
+
     filterMessage(n) {
       this.alertMessage = {};
-      switch (n) {
-        case "power":
-          this.sendMessage(
-            "Успешно!",
-            `Электростанции: ${Object.values(this.markers).length}`,
-            "blue"
-          );
-          break;
-        case "minerals":
-          this.sendMessage(
-            "Успешно!",
-            `Минералы: ${Object.values(this.markers).length}`,
-            "blue"
-          );
-          break;
-        case "future_power":
-          this.sendMessage(
-            "Успешно!",
-            `Строящиеся Электростанции: ${Object.values(this.markers).length}`,
-            "blue"
-          );
-          break;
-        case "return_energy":
-          this.sendMessage(
-            "Успешно!",
-            `ВИЭ: ${Object.values(this.markers).length}`,
-            "blue"
-          );
-          break;
-        case "other":
-          this.sendMessage(
-            "Успешно!",
-            `Прочее: ${Object.values(this.markers).length}`,
-            "blue"
-          );
-          break;
-      }
-    },
-    openImageModal(imageList) {
-      this.imgMoadal = imageList;
-    },
-    sendMessage(title, message, color) {
-      this.alertMessage = {};
-      this.alertMessage = {
-        status: true,
-        title: title,
-        color: color,
-        message: message,
+      const names = {
+        power: "Электростанции",
+        minerals: "Минералы",
+        future_power: "Строящиеся Электростанции",
+        return_energy: "ВИЭ",
+        other: "Прочее",
       };
+      this.sendMessage(
+        "Система:",
+        `${names[n]}: ${Object.values(this.markers).length}`,
+        "blue"
+      );
     },
+
+    openImageModal(imageList) {
+      this.imgModal = imageList || [];
+    },
+
+    sendMessage(title, message, color) {
+      this.alertMessage = { status: true, title, color, message };
+    },
+
     async getData(name, option = "") {
       const url = `https://narynmap-35e43-default-rtdb.firebaseio.com/${name}.json${option}`;
-
       const response = await fetch(url);
-      const data = await response.json();
-      return data;
+      return await response.json();
     },
 
     async initt() {
       const self = this;
       const option =
-        this.$route.name == "category"
-          ? `?orderBy="${this.$route.name}"&equalTo="${this.$route.params.name}"`
+        this.$route.name === "category"
+          ? `?orderBy="category"&equalTo="${this.$route.params.name}"`
           : "";
 
       async function initMap() {
@@ -283,6 +244,7 @@ export default {
           "https://img.icons8.com/?size=100&id=DlaHJjjCFSFQ&format=png&color=000000",
         other: "",
       };
+
       this.markersList.forEach((marker) => marker.setMap(null));
       this.markersList = [];
 
@@ -291,12 +253,14 @@ export default {
           position: { lat: m.lat, lng: m.lng },
           map: this.map,
           icon: {
-            url: icons[m.category], // путь к картинке
-            scaledSize: new google.maps.Size(40, 40), // задаем ширину и высоту
-            origin: new google.maps.Point(0, 0), // точка начала изображения
-            anchor: new google.maps.Point(20, 40), // якорная точка (смещение)
+            url: icons[m.category],
+            scaledSize: new google.maps.Size(40, 40),
+            origin: new google.maps.Point(0, 0),
+            anchor: new google.maps.Point(20, 40),
           },
         });
+
+        this.markersList.push(marker);
 
         const infoWindow = new google.maps.InfoWindow({
           content: `
@@ -309,7 +273,7 @@ export default {
                 <div class="mb-5">
                     <p class="text-sm ">${
                       m.description || "Нету данных ..."
-                    } </p>
+                    }</p>
                 </div>
                 <div class="mb-5">
                 <ul>
@@ -330,10 +294,8 @@ export default {
                     m.Purpose_of_construction || "Нету данных ..."
                   }</span>
                 </li>
-                
-            
                   <li class="mb-2">
-                  <span class="text-base font-bold"> Партнеры: </span>
+                  <span class="text-base font-bold">Партнеры: </span>
                   <span class="text-sm">${
                     m.partners || "Нету данных ..."
                   }</span>
@@ -344,7 +306,7 @@ export default {
              <img id="marker-img-${m.lat}-${
             m.lng
           }" class="object-cover w-full h-48" src="${
-            m.images[0] ||
+            (m.images && m.images[0]) ||
             "https://i0.wp.com/learn.onemonth.com/wp-content/uploads/2017/08/1-10.png?w=845&ssl=1"
           }" alt="">
                 </div>
@@ -354,31 +316,56 @@ export default {
 
         marker.addListener("click", () => {
           infoWindow.open(this.map, marker);
-
           google.maps.event.addListenerOnce(infoWindow, "domready", () => {
             const img = document.getElementById(`marker-img-${m.lat}-${m.lng}`);
             if (img) {
               img.addEventListener("click", () => {
-                this.openImageModal(m.images);
+                this.openImageModal(m.images || []);
               });
             }
           });
         });
       });
     },
+    admintime() {
+      setInterval(() => {
+        const expiresAt = localStorage.getItem("expiresIn");
+        if (expiresAt) {
+          const totalSeconds = Math.floor((expiresAt - Date.now()) / 1000);
+
+          if (totalSeconds <= 0) {
+            this.time = `0 : 0 : 0`;
+            this.logout();
+            return;
+          }
+
+          // Переводим в часы:минуты:секунды
+          const hours = Math.floor(totalSeconds / 3600);
+          const minutes = Math.floor((totalSeconds % 3600) / 60);
+          const seconds = totalSeconds % 60;
+
+          this.time = `${hours} : ${minutes} : ${seconds}`;
+        }
+      }, 1000);
+    },
   },
   mounted() {
     this.initt();
     this.checkRefreshToken();
+
+    this.admintime();
+    setInterval(() => {
+      this.checkRefreshToken();
+    }, 5 * 60 * 1000);
+
+    // Каждую секунду — выводим оставшееся время
   },
   watch: {
     "$route.params.name": {
-      handler(newCategory) {
-        this.statusLoginOpen();
-
+      handler() {
         this.initt();
       },
-      immediate: true, // <-- теперь правильно
+      immediate: true,
     },
   },
 };
