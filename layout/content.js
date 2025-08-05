@@ -52,8 +52,8 @@ export default {
           </ul>
           
            
-           <adminSide v-if="this.$route.name === 'admin'" :time="time"></adminSide>
-           <sidNoAdmin v-else :select="select" @eventMessage="filterMessage"></sidNoAdmin>
+           <adminSide v-if="this.$route.name === 'admin'" :time="time" :category="select"></adminSide>
+           <sidNoAdmin v-else :select="select" @eventMessage="filterMessage" ></sidNoAdmin>
         </div>
       </aside>
         <div>
