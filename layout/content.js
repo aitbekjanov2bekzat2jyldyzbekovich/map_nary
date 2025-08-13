@@ -152,10 +152,10 @@ export default {
         return false;
       }
 
-      if (timeLeft < 300) {
+      if (timeLeft < 300 && this.$route.name === "admin") {
         this.sendMessage(
           "Система:",
-          "Система выйдет из аккауна через 5 мин. \n вам нужно снова войти в аккаунт !",
+          `Система выйдет из аккауна через ${timeLeft} сек.  \n вам нужно снова войти в аккаунт !`,
           "yellow"
         );
       }
