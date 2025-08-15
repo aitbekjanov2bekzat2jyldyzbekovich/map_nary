@@ -52,7 +52,7 @@ export default {
           </ul>
           
            
-           <adminSide v-if="this.$route.name === 'admin'" :time="time" :category="select"></adminSide>
+           <adminSide v-if="this.$route.name === 'admin'" :clearForm="clearForm" @getValue="addMarker" :idMarker="Object.values(markers).length" :time="time" :category="select" :cardinats="cardinats" @imgMessage="getImgMessage" />
            <sidNoAdmin v-else :select="select" @eventMessage="filterMessage" ></sidNoAdmin>
         </div>
       </aside>
@@ -86,9 +86,39 @@ export default {
       API_KEY: "AIzaSyDWNlcEM0stBIPMDdVTgXYwKPSkaDmSzsI",
       loader: false,
       statusLogin: false,
+      cardinats: [],
+      URL: "https://narynmap-35e43-default-rtdb.firebaseio.com/",
+      clearForm: 0,
     };
   },
   methods: {
+    getImgMessage(e) {
+      this.sendMessage(e.title, e.message, e.color);
+    },
+    async addMarker(marker) {
+      try {
+        if (marker) {
+          const ressponse = await fetch(`${this.URL}markers.json`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(marker),
+          });
+          if (ressponse.ok) {
+            this.initt();
+          }
+        }
+      } catch (err) {
+        this.sendMessage("Ошибка:", `${err}`, "red");
+        this.clearForm = +1;
+        this.cardinats = [];
+      } finally {
+        this.clearForm = +1;
+        this.cardinats = [];
+        this.sendMessage("Сервер:", "успешно добалено !", "green");
+      }
+    },
     async login(userData) {
       this.loader = true;
       const url = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${this.API_KEY}`;
@@ -164,7 +194,6 @@ export default {
     },
 
     filterMessage(n) {
-      this.alertMessage = {};
       const names = {
         power: "Электростанции",
         minerals: "Минералы",
@@ -184,11 +213,12 @@ export default {
     },
 
     sendMessage(title, message, color) {
+      this.alertMessage = {};
       this.alertMessage = { status: true, title, color, message };
     },
 
     async getData(name, option = "") {
-      const url = `https://narynmap-35e43-default-rtdb.firebaseio.com/${name}.json${option}`;
+      const url = `${this.URL}${name}.json${option}`;
       const response = await fetch(url);
       return await response.json();
     },
@@ -214,6 +244,16 @@ export default {
           strokeColor: "red",
           strokeWeight: 2,
           fillOpacity: 0.2,
+        });
+        self.map.data.addListener("click", (event) => {
+          const lat = event.latLng.lat();
+          const lng = event.latLng.lng();
+          self.cardinats = [lat, lng];
+          self.sendMessage(
+            "Система:",
+            `Кардинаты: X= ${lat}, Y= ${lng}`,
+            "blue"
+          );
         });
 
         await self.renderMarker(self.markers);
@@ -286,7 +326,9 @@ export default {
                 </li>
                   <li class="mb-2">
                   <span class="text-base font-bold">Статус: </span>
-                  <span class="text-sm">${m.status || "Нету данных ..."}</span>
+                  <span class="text-sm">${
+                    m.statusEb || "Нету данных ..."
+                  }</span>
                 </li>
                   <li class="mb-2">
                   <span class="text-base font-bold">Цель проекта: </span>
