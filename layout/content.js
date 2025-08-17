@@ -52,7 +52,7 @@ export default {
           </ul>
           
            
-           <adminSide v-if="this.$route.name === 'admin'" :clearForm="clearForm" @getValue="addMarker" :idMarker="Object.values(markers).length" :time="time" :category="select" :cardinats="cardinats" @imgMessage="getImgMessage" />
+           <adminSide @deleteMarker="deletMarker" :statusMarker="statusMarker" v-if="this.$route.name === 'admin'" @editMarker="aditMarker" :formValue="formValue" @getValue="addMarker"  :time="time" :category="select" :cardinats="cardinats" @imgMessage="getImgMessage" />
            <sidNoAdmin v-else :select="select" @eventMessage="filterMessage" ></sidNoAdmin>
         </div>
       </aside>
@@ -87,38 +87,141 @@ export default {
       loader: false,
       statusLogin: false,
       cardinats: [],
+      statusMarker: true,
       URL: "https://narynmap-35e43-default-rtdb.firebaseio.com/",
-      clearForm: 0,
+      marker: null,
+
+      formValue: {
+        Purpose_of_construction: null,
+        category: null,
+        description: null,
+        lat: null,
+        lng: null,
+        images: [],
+        partners: null,
+        statusEb: [],
+        place: null,
+        title: null,
+        id: null,
+      },
     };
   },
   methods: {
+    clearForm() {
+      this.formValue = {
+        Purpose_of_construction: null,
+        category: null,
+        description: null,
+        lat: null,
+        lng: null,
+        images: [],
+        partners: null,
+        statusEb: [],
+        place: null,
+        title: null,
+        id: null,
+      };
+      this.cardinats = [];
+    },
+    async deletMarker() {
+      if (!this.marker || !this.marker.id) {
+        this.sendMessage(
+          "Система:",
+          "Нет выбранного маркера для удаления",
+          "yellow"
+        );
+        return;
+      }
+
+      if (!confirm(`Вы хотите удалить маркер: ${this.marker.id}?`)) {
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `${this.URL}markers/${this.marker.id}.json`,
+          {
+            method: "DELETE",
+          }
+        );
+
+        if (response.ok) {
+          this.sendMessage("Сервер:", "Маркер успешно удалён!", "green");
+          this.clearForm();
+          this.statusMarker = true;
+          await this.initt();
+        } else {
+          this.sendMessage("Сервер:", `Ошибка ${response.status}`, "red");
+        }
+      } catch (err) {
+        this.sendMessage("Ошибка:", err.message || err, "red");
+      }
+    },
+
     getImgMessage(e) {
       this.sendMessage(e.title, e.message, e.color);
     },
-    async addMarker(marker) {
+    async aditMarker() {
       try {
-        if (marker) {
-          const ressponse = await fetch(`${this.URL}markers.json`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(marker),
-          });
-          if (ressponse.ok) {
+        if (this.marker && this.marker.id) {
+          const response = await fetch(
+            `${this.URL}markers/${this.marker.id}.json`,
+            {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(this.formValue),
+            }
+          );
+
+          if (response.ok) {
             this.initt();
+            this.sendMessage(
+              "Сервер:",
+              `${this.marker.id} - маркер изменён !`,
+              "green"
+            );
           }
         }
       } catch (err) {
         this.sendMessage("Ошибка:", `${err}`, "red");
-        this.clearForm = +1;
-        this.cardinats = [];
+        this.clearForm();
+        this.statusMarker = true;
       } finally {
-        this.clearForm = +1;
-        this.cardinats = [];
-        this.sendMessage("Сервер:", "успешно добалено !", "green");
+        this.clearForm();
+        this.statusMarker = true;
       }
     },
+
+    async addMarker(marker) {
+      try {
+        if (marker) {
+          const response = await fetch(`${this.URL}markers.json`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(marker),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            console.log(data.name);
+
+            await fetch(`${this.URL}markers/${data.name}.json`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id: data.name }),
+            });
+            this.initt();
+            this.sendMessage("Сервер:", "успешно добавлено !", "green");
+          }
+        }
+      } catch (err) {
+        this.sendMessage("Ошибка:", `${err}`, "red");
+        this.clearForm();
+      } finally {
+        this.clearForm();
+      }
+    },
+
     async login(userData) {
       this.loader = true;
       const url = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${this.API_KEY}`;
@@ -246,14 +349,16 @@ export default {
           fillOpacity: 0.2,
         });
         self.map.data.addListener("click", (event) => {
-          const lat = event.latLng.lat();
-          const lng = event.latLng.lng();
-          self.cardinats = [lat, lng];
-          self.sendMessage(
-            "Система:",
-            `Кардинаты: X= ${lat}, Y= ${lng}`,
-            "blue"
-          );
+          if (self.$route.name === "admin" && self.statusMarker) {
+            const lat = event.latLng.lat();
+            const lng = event.latLng.lng();
+            self.cardinats = [lat, lng];
+            self.sendMessage(
+              "Система:",
+              `Кардинаты: X= ${lat}, Y= ${lng}`,
+              "blue"
+            );
+          }
         });
 
         await self.renderMarker(self.markers);
@@ -282,7 +387,6 @@ export default {
           "https://img.icons8.com/?size=100&id=Ext6HcYgPkyd&format=png&color=000000",
         return_energy:
           "https://img.icons8.com/?size=100&id=DlaHJjjCFSFQ&format=png&color=000000",
-        other: "",
       };
 
       this.markersList.forEach((marker) => marker.setMap(null));
@@ -366,6 +470,17 @@ export default {
               });
             }
           });
+        });
+
+        marker.addListener("click", () => {
+          this.statusMarker = false;
+          const gotMarker = Object.values(this.markers).filter(
+            (i) => i.id === m.id
+          );
+          this.marker = gotMarker[0];
+          this.formValue = this.marker;
+          this.cardinats = [this.marker.lat, this.marker.lng];
+          console.log(this.marker);
         });
       });
     },
