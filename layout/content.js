@@ -53,7 +53,7 @@ export default {
           
            
            <adminSide @closeAdmin="closeAdmin" @clearMarker="clearMarker" :acrdionName = "acrdionName" @deleteMarker="deletMarker" :statusMarker="statusMarker" v-if="this.$route.name === 'admin'" @editMarker="aditMarker" :formValue="formValue" @getValue="addMarker"  :time="time" :category="select" :cardinats="cardinats" @imgMessage="getImgMessage" />
-           <sidNoAdmin v-else :select="select" @eventMessage="filterMessage" ></sidNoAdmin>
+           <sidNoAdmin v-else   @searchMarkers="searchMarkers" :select="select" @eventMessage="filterMessage" ></sidNoAdmin>
         </div>
       </aside>
         <div >
@@ -92,6 +92,7 @@ export default {
       marker: null,
       acrdionName: "Добавить место",
       currentInfoWindow: null,
+      searchQuery: "",
 
       formValue: {
         Purpose_of_construction: null,
@@ -109,6 +110,16 @@ export default {
     };
   },
   methods: {
+    async searchMarkers(q) {
+      if (q.trim() === "") {
+        this.initt();
+        return;
+      }
+      const query = encodeURIComponent(q);
+
+      const url = `?orderBy="title"&startAt="${query}"&endAt="${query}\uf8ff"`;
+      await  this.initt(url);
+    },
     closeAdmin() {
       if (!confirm("Вы хотите выйти из админ аккаунта ?")) {
         return;
@@ -344,7 +355,7 @@ export default {
       return await response.json();
     },
 
-    async initt() {
+    async initt(search) {
       const self = this;
       const option =
         this.$route.name === "category"
@@ -356,8 +367,9 @@ export default {
           center: { lat: 41.433678, lng: 75.983283 },
           zoom: 8,
         });
+
         const naryn = await self.getData("map");
-        self.markers = await self.getData("markers", option);
+        self.markers = await self.getData("markers", option || search);
 
         self.map.data.addGeoJson(naryn);
         self.map.data.setStyle({
