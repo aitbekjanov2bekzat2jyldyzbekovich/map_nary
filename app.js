@@ -1,4 +1,5 @@
 import content from "./layout/content.js";
+
 const Home = {
   template: `<layout-content></layout-content>`,
 };

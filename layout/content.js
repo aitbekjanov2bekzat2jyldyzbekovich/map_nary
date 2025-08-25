@@ -52,11 +52,11 @@ export default {
           </ul>
           
            
-           <adminSide @deleteMarker="deletMarker" :statusMarker="statusMarker" v-if="this.$route.name === 'admin'" @editMarker="aditMarker" :formValue="formValue" @getValue="addMarker"  :time="time" :category="select" :cardinats="cardinats" @imgMessage="getImgMessage" />
+           <adminSide @closeAdmin="closeAdmin" @clearMarker="clearMarker" :acrdionName = "acrdionName" @deleteMarker="deletMarker" :statusMarker="statusMarker" v-if="this.$route.name === 'admin'" @editMarker="aditMarker" :formValue="formValue" @getValue="addMarker"  :time="time" :category="select" :cardinats="cardinats" @imgMessage="getImgMessage" />
            <sidNoAdmin v-else :select="select" @eventMessage="filterMessage" ></sidNoAdmin>
         </div>
       </aside>
-        <div>
+        <div >
            <div class="p-4 sm:ml-64 h-screen" id="map" />
         </div>
    `,
@@ -90,6 +90,8 @@ export default {
       statusMarker: true,
       URL: "https://narynmap-35e43-default-rtdb.firebaseio.com/",
       marker: null,
+      acrdionName: "Добавить место",
+      currentInfoWindow: null,
 
       formValue: {
         Purpose_of_construction: null,
@@ -107,6 +109,36 @@ export default {
     };
   },
   methods: {
+    closeAdmin() {
+      if (!confirm("Вы хотите выйти из админ аккаунта ?")) {
+        return;
+      }
+      this.$router.push("/");
+      this.clearForm();
+      this.logout();
+    },
+    async clearMarker() {
+      if (!confirm("Вы хотите очистить ?")) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`${this.URL}markers.json`, {
+          method: "DELETE",
+        });
+
+        if (response.ok) {
+          this.sendMessage("Сервер:", "маркеры удалены !", "green");
+          this.clearForm();
+          this.statusMarker = true;
+          await this.initt();
+        } else {
+          this.sendMessage("Сервер:", `Ошибка ${response.status}`, "red");
+        }
+      } catch (err) {
+        this.sendMessage("Ошибка:", err.message || err, "red");
+      }
+    },
     clearForm() {
       this.formValue = {
         Purpose_of_construction: null,
@@ -122,17 +154,10 @@ export default {
         id: null,
       };
       this.cardinats = [];
+      this.acrdionName = "Добавить место";
+      this.statusMarker = true;
     },
     async deletMarker() {
-      if (!this.marker || !this.marker.id) {
-        this.sendMessage(
-          "Система:",
-          "Нет выбранного маркера для удаления",
-          "yellow"
-        );
-        return;
-      }
-
       if (!confirm(`Вы хотите удалить маркер: ${this.marker.id}?`)) {
         return;
       }
@@ -148,7 +173,6 @@ export default {
         if (response.ok) {
           this.sendMessage("Сервер:", "Маркер успешно удалён!", "green");
           this.clearForm();
-          this.statusMarker = true;
           await this.initt();
         } else {
           this.sendMessage("Сервер:", `Ошибка ${response.status}`, "red");
@@ -184,11 +208,8 @@ export default {
         }
       } catch (err) {
         this.sendMessage("Ошибка:", `${err}`, "red");
-        this.clearForm();
-        this.statusMarker = true;
       } finally {
         this.clearForm();
-        this.statusMarker = true;
       }
     },
 
@@ -203,22 +224,19 @@ export default {
 
           if (response.ok) {
             const data = await response.json();
-            console.log(data.name);
-
             await fetch(`${this.URL}markers/${data.name}.json`, {
               method: "PATCH",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ id: data.name }),
             });
             this.initt();
-            this.sendMessage("Сервер:", "успешно добавлено !", "green");
           }
         }
       } catch (err) {
         this.sendMessage("Ошибка:", `${err}`, "red");
-        this.clearForm();
       } finally {
         this.clearForm();
+        this.sendMessage("Сервер:", "успешно добавлено !", "green");
       }
     },
 
@@ -462,6 +480,7 @@ export default {
 
         marker.addListener("click", () => {
           infoWindow.open(this.map, marker);
+
           google.maps.event.addListenerOnce(infoWindow, "domready", () => {
             const img = document.getElementById(`marker-img-${m.lat}-${m.lng}`);
             if (img) {
@@ -473,14 +492,32 @@ export default {
         });
 
         marker.addListener("click", () => {
-          this.statusMarker = false;
-          const gotMarker = Object.values(this.markers).filter(
-            (i) => i.id === m.id
-          );
-          this.marker = gotMarker[0];
-          this.formValue = this.marker;
-          this.cardinats = [this.marker.lat, this.marker.lng];
-          console.log(this.marker);
+          if (this.currentInfoWindow) {
+            this.currentInfoWindow.close();
+          }
+
+          this.currentInfoWindow = infoWindow; //
+          if (this.$route.name === "admin") {
+            this.statusMarker = false;
+            const gotMarker = Object.values(this.markers).filter(
+              (i) => i.id === m.id
+            );
+            this.marker = gotMarker[0];
+            this.formValue = this.marker;
+            this.cardinats = [this.marker.lat, this.marker.lng];
+            this.sendMessage(
+              "Система:",
+              `Вы получили маркер ${this.marker.id},`,
+              "blue"
+            );
+            this.acrdionName = "Изменить маркер";
+          }
+        });
+        infoWindow.addListener("closeclick", () => {
+          this.statusMarker = true;
+          this.marker = null;
+          this.clearForm();
+          this.currentInfoWindow = null; // окно закрыто
         });
       });
     },
